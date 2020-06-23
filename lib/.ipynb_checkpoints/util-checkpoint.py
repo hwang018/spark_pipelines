@@ -134,6 +134,16 @@ def coverage_test_spark(spark_df, cat_columns, mini=2, maxi=100):
 
     return final_count_df, no_info_col, high_nums_col
 
+
+
+########################  ###############################
+
+
+
+
+
+
+
 ######################## datetime related ###############################
 def pandasdate_maker(intdate):
     '''

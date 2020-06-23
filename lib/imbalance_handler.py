@@ -51,6 +51,17 @@ def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_c
     
 
 ############################## smote up sampling ##########################
-def spark_df_smote_sampling(sdf, desired_major_to_minor_ratio, label_col, major_class_val = 0, seed = 52):
-    #WIP
+def __smote_single_query():
+    '''
+    single step to generate up to k synthetic samples per minority point
+    using spark lsh algo to find nearest k points, randomly choose one neighbour and create one synthetic sample
+    keep track of stringIndexed columns (these are original cat cols)
+    '''
+    
+    
+
+
+
+def spark_df_smote_sampling(sdf, desired_major_to_minor_ratio, num_col_indices, str_col_indices, label_col, major_class_val = 0, seed = 52):
+    #WIP: main difficulty: doing smote on categorical columns
     return None
