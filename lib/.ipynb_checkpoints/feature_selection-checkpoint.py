@@ -1,8 +1,8 @@
 #contains 4 types of feature removal
 #1.hard-coded feature remover
 #2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
-#3.model selected features to be removed, specify how many top features to retain
-#4.lasso feature selection
+#3.check pearson correlation, and chi-squared feature selection
+#4.using model to select features, RF or lasso feature selection
 
 #start:
 
@@ -43,7 +43,6 @@ def cat_col_cardinality_test(sdf,config):
     if not specified, will not have lower/upper bound
     '''
 
-    
 def num_cols_correlation_test(sdf,config):
     '''
     input: spark df, config.corr_thres
@@ -52,5 +51,8 @@ def num_cols_correlation_test(sdf,config):
     '''
     
     
-#multi-colinearlity test
+#multi-colinearlity test, drop highly correlated features, using 2 metrics, pearson correlation
+#and chi-square 
+
+
     

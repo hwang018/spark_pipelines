@@ -91,7 +91,6 @@ def get_num_cat_feat(input_spark_df, exclude_list=[]):
 
     return numeric_columns, string_columns
 
-
 def coverage_test_spark(spark_df, cat_columns, mini=2, maxi=100):
     """
     desc:  The coverage test for categorical features, which make sure the number of categorical levels for categorical featues to be
@@ -135,7 +134,6 @@ def coverage_test_spark(spark_df, cat_columns, mini=2, maxi=100):
 
     return final_count_df, no_info_col, high_nums_col
 
-
 ######################## datetime related ###############################
 def pandasdate_maker(intdate):
     '''
@@ -157,7 +155,6 @@ def relative_days(intwkend,deltadays = -7):
         intstartday = float('NaN')
     return intstartday
 
-
 def last_day(d, day_name):
     '''
     All are helper functions to generate proper sectionalized periods
@@ -170,8 +167,10 @@ def last_day(d, day_name):
     if delta_day >= 0: delta_day -= 7 # go back 7 days
     return d + timedelta(days=delta_day)
 
-
 def get_date_pairs(start_date_int,end_date_int):
+    '''
+    given start and end dates (int), return pairs of dates in pandas format
+    '''
     #Make integer dates in pandas format
     start_period = pandasdate_maker(start_date_int)
     end_period = pandasdate_maker(end_date_int)
@@ -240,7 +239,6 @@ def period_days_generator(datetuple):
         days_list.append(int(str(day).replace('-', '')))
 
     return days_list
-
 
 def get_month(yyyyMM):
     """
