@@ -1,13 +1,17 @@
 import pyspark.mllib.stat as st
+import pyspark.mllib.linalg as ln
 import numpy as np
 import random
 
-#contains 4 types of feature removal
-#1.hard-coded feature remover
-#2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
-#3.using model to select features, RF or lasso feature selection
+'''
+contains 5 types of feature removal
+1.hard-coded feature remover
+2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
+3.using model to select features, lgbm or lasso feature selection
+'''
 
 ####################### type 1: hard-coded feature remover #################
+
 def hard_coded_feature_remover(sdf,config):
     '''
     find features to remove, according to input config
@@ -33,7 +37,41 @@ def hard_coded_feature_remover(sdf,config):
     
     return retain_cols,removed_cols,retained_sdf
 
-####################### type 2: remove too high cardinality cat cols, and highly correlated num features #################
+####################### type 2: remove categorical cols that fails chi-square test #################
+
+def chi_square_cat_feature_selector(sdf,target_col,cat_cols,chi_square_thres=0.05):
+    '''
+    chi-square test on cat cols, find irrelevant cat cols
+    input:
+        * sdf: spark df
+        * target_col: the prediction target column
+        * cat_cols: the cat cols for chi-square test
+        * chi_square_thres: critical value chosen for chi-square test, default 0.05
+    output:
+        * chi_square_drop_cols: cat cols that are independent of the target
+    '''
+    chi_square_drop_cols = []
+    
+    #simple chi-squared test to filter out columns that are meaningless to target
+    for cat in cat_cols[1:]:
+        agg = sdf.groupby(target_col).pivot(cat).count()
+        agg_rdd = agg.rdd.map(lambda row: (row[1:])) \
+          .flatMap(lambda row:[0 if e == None else e for e in row]).collect()
+
+        row_length = len(agg.collect()[0]) - 1
+        agg = ln.Matrices.dense(row_length, 2, agg_rdd)
+        test = st.Statistics.chiSqTest(agg)
+        
+        if round(test.pValue, 4) >= chi_square_thres:
+            #independent col
+            chi_square_drop_cols.append(cat)
+    print("cols to drop after chi-square test:%s"%chi_square_drop_cols)
+    
+    return chi_square_drop_cols
+
+
+####################### type 3: remove too high cardinality cat cols #################
+
 def cat_col_cardinality_test(spark_df, cat_columns, mini=2, maxi=100):
     """
     desc:  The coverage test for categorical features, which make sure the number of categorical levels for categorical featues to be
@@ -77,10 +115,8 @@ def cat_col_cardinality_test(spark_df, cat_columns, mini=2, maxi=100):
 
     return final_count_df, no_info_col, high_nums_col
 
-#multi-colinearlity test, drop highly correlated features, using 2 metrics, pearson correlation
-#and chi-square
+####################### type 4: remove highly correlated num cols #################
 
-#then these pairs must be symmetric
 def num_cols_correlation_test(sdf,num_cols,corr_thres,must_keep_cols=[]):
     '''
     input: spark df, threshold of correlation
@@ -116,9 +152,4 @@ def num_cols_correlation_test(sdf,num_cols,corr_thres,must_keep_cols=[]):
             
     return col_to_drop
     
-####################### type 3: model based feature selection #################
-
-
-
-
-    
+####################### type 5: model based feature selection #################

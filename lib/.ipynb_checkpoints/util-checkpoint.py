@@ -30,9 +30,8 @@ from pyspark.sql.window import Window
 from pyspark.sql.types import *
 from pyspark.sql import SparkSession,SQLContext
 
-#entry points like spark,sc,sqlContext will be passed into function directly
-
 ######################## convert pandas to spark df ###############################
+
 def equivalent_type(f):
     '''
     add more spark sql types like bigint ...
@@ -58,6 +57,7 @@ def pandas_to_spark(sqlcontext,pandas_df):
     return sqlcontext.createDataFrame(pandas_df, p_schema)
 
 ######################## get num and cat features spark df ###############################
+
 def get_num_cat_feat(input_spark_df, exclude_list=[]):
     """
     desc: return cat and num features list from a spark df, a step before any encoding on cat features
@@ -91,60 +91,13 @@ def get_num_cat_feat(input_spark_df, exclude_list=[]):
 
     return numeric_columns, string_columns
 
-def coverage_test_spark(spark_df, cat_columns, mini=2, maxi=100):
-    """
-    desc:  The coverage test for categorical features, which make sure the number of categorical levels for categorical featues to be
-    larger than or equal to mini, and smaller than or equal to maxi.
-    inputs:
-        * spark_df: the input spark dataframe to be checked.
-        * cat_columns (list of str): the list of categorical column names to be checked.
-        * mini (int, optional): the minimum number of categorical levels defined for categorical features.
-        * maxi (int, optional): the maximum number of categorical levels defined for categorical features.
-    returns:
-        * final_count_df: the pandas dataframe which store the number of categorical levels for categorical featues.
-        * no_info_col (list of str): the list of column names with number of categorical levels less than mini.
-        * high_nums_col (list of str): the list of column names with number of categorical levels larger than maxi.
-    """
-    print("Start the count computation for categorical features...")
-    print("The no. of categorical features: {0}".format(str(len(cat_columns))))
-
-    final_count_df = pd.DataFrame()
-    count =1
-
-    for col in cat_columns:
-        count_df = spark_df.agg(countDistinct(col).alias("count")).toPandas()
-        count_df.index = [col]
-        if final_count_df.empty:
-            final_count_df = count_df.copy()
-        else:
-            final_count_df = final_count_df.append(count_df)
-        
-        del count_df
-        gc.collect()
-        count +=1
-
-    no_info_df = final_count_df[final_count_df['count']<mini]
-    no_use_tuple = [(x, y) for x, y in zip(list(no_info_df.index), list(no_info_df['count']))]
-
-    high_nums_df = final_count_df[final_count_df['count']>maxi]
-    high_nums_tuple = [(x, y) for x, y in zip(list(high_nums_df.index), list(high_nums_df['count']))]
-
-    no_info_col = no_info_df.index.values.tolist()
-    high_nums_col = high_nums_df.index.values.tolist()
-
-    return final_count_df, no_info_col, high_nums_col
-
-
-
-########################  ###############################
-
-
 
 
 
 
 
 ######################## datetime related ###############################
+
 def pandasdate_maker(intdate):
     '''
     Parses an integer date like 20180819 and return its pandas date format

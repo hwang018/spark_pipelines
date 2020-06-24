@@ -30,9 +30,8 @@ from pyspark.sql.window import Window
 from pyspark.sql.types import *
 from pyspark.sql import SparkSession,SQLContext
 
-#entry points like spark,sc,sqlContext will be passed into function directly
-
 ######################## convert pandas to spark df ###############################
+
 def equivalent_type(f):
     '''
     add more spark sql types like bigint ...
@@ -58,6 +57,7 @@ def pandas_to_spark(sqlcontext,pandas_df):
     return sqlcontext.createDataFrame(pandas_df, p_schema)
 
 ######################## get num and cat features spark df ###############################
+
 def get_num_cat_feat(input_spark_df, exclude_list=[]):
     """
     desc: return cat and num features list from a spark df, a step before any encoding on cat features
@@ -94,15 +94,10 @@ def get_num_cat_feat(input_spark_df, exclude_list=[]):
 
 
 
-########################  ###############################
-
-
-
-
-
 
 
 ######################## datetime related ###############################
+
 def pandasdate_maker(intdate):
     '''
     Parses an integer date like 20180819 and return its pandas date format

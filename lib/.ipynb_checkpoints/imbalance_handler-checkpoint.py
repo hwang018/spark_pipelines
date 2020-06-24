@@ -6,8 +6,8 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.sql.functions import col,when,concat,substring,lit,udf,lower,sum as ps_sum,count as ps_count,row_number
 from pyspark.sql.window import *
 
-
 ############################## random down sampling ##########################
+
 def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_class_val = 0, seed = 52):
     """
     Downsample majority class to get desired major to minor ratio, only accepts binary classification
@@ -49,8 +49,8 @@ def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_c
         print("Desired ratio is too large and no downsampling performed, return input dataframe.")
         return sdf
     
-
 ############################## smote up sampling ##########################
+
 def __smote_single_query():
     '''
     single step to generate up to k synthetic samples per minority point
@@ -59,9 +59,6 @@ def __smote_single_query():
     '''
     
     
-
-
-
 def spark_df_smote_sampling(sdf, desired_major_to_minor_ratio, num_col_indices, str_col_indices, label_col, major_class_val = 0, seed = 52):
     #WIP: main difficulty: doing smote on categorical columns
     return None
