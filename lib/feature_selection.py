@@ -1,7 +1,10 @@
 import pyspark.mllib.stat as st
 import pyspark.mllib.linalg as ln
 import numpy as np
+import pandas as pd
 import random
+import gc
+from pyspark.sql.functions import *
 
 '''
 contains 5 types of feature removal
@@ -14,9 +17,11 @@ contains 5 types of feature removal
 
 def hard_coded_feature_remover(sdf,config):
     '''
-    find features to remove, according to input config
-    input:sparkdf,config (contains what names of features to remove)
-    output:selected_features,dropped features,selected columns spark dataframe
+    input:
+        * sdf: spark df
+        * config: contains what names of features to remove
+    output:
+        * selected_features,dropped features,selected columns spark dataframe        
     '''
     cols_nm_remove = config.cols_remove
     must_keep_cols = config.must_keep_cols
@@ -41,7 +46,7 @@ def hard_coded_feature_remover(sdf,config):
 
 def chi_square_cat_feature_selector(sdf,target_col,cat_cols,chi_square_thres=0.05):
     '''
-    chi-square test on cat cols, find irrelevant cat cols
+    ChiSquareTest conducts Pearson’s independence test for every feature against the target
     input:
         * sdf: spark df
         * target_col: the prediction target column
@@ -90,7 +95,7 @@ def cat_col_cardinality_test(spark_df, cat_columns, mini=2, maxi=100):
     print("The no. of categorical features: {0}".format(str(len(cat_columns))))
 
     final_count_df = pd.DataFrame()
-    count =1
+    count = 1
 
     for col in cat_columns:
         count_df = spark_df.agg(countDistinct(col).alias("count")).toPandas()
@@ -102,7 +107,7 @@ def cat_col_cardinality_test(spark_df, cat_columns, mini=2, maxi=100):
         
         del count_df
         gc.collect()
-        count +=1
+        count += 1
 
     no_info_df = final_count_df[final_count_df['count']<mini]
     no_use_tuple = [(x, y) for x, y in zip(list(no_info_df.index), list(no_info_df['count']))]
@@ -150,6 +155,11 @@ def num_cols_correlation_test(sdf,num_cols,corr_thres,must_keep_cols=[]):
         else:
             col_to_drop.append(target)
             
-    return col_to_drop
+    return list(set(col_to_drop))
     
 ####################### type 5: model based feature selection #################
+
+'''
+by building a gradient boosting maching model
+and retain top features by importance
+'''

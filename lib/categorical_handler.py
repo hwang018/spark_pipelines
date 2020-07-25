@@ -1,10 +1,15 @@
+import pyspark
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import StringIndexer, VectorAssembler
+from distutils.version import LooseVersion
+from pyspark.ml.feature import StandardScaler,MinMaxScaler
+
 #contains a few types of categorical feature encoding
 #1.one-hot encoding, by using OneHotEstimator
 #2.label encoding, just by using stringIndexer, ok for ordinal but not for norminal features
-#3.
-
 
 ########################### high cardinality, group tails ###########################
+
 def get_retained_categories(sdf,cat_cols,max_cat):
     '''
     for each cat col, find all items count,
@@ -34,4 +39,6 @@ def get_retained_categories(sdf,cat_cols,max_cat):
         else:
             res[col] = counts_all
     return res
+
+########################### one hot encoder ###########################
 

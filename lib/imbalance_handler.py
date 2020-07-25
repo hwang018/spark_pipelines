@@ -31,7 +31,7 @@ def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_c
     if current_maj_to_min_ratio > desired_major_to_minor_ratio:
         # need to apply downsample
         desired_maj_samples =  desired_major_to_minor_ratio * class_count[minor_class_val]
-        #set seed
+        # set seed
         np.random.seed(seed)
         w = Window().orderBy(label_col)
         # index to differentiate pos/neg samples, all rows to be indexed
