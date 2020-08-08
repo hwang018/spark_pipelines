@@ -2,21 +2,13 @@ import random
 import numpy as np
 from functools import reduce
 import pyspark.sql.functions as F
-from pyspark.sql import Row
-from pyspark.sql.functions import rand,col,when,concat,substring,lit,udf,lower,sum as ps_sum,count as ps_count,row_number
+from pyspark.sql import Row, DataFrame
 from pyspark.sql.window import *
-from pyspark.sql import DataFrame
-from pyspark.ml.feature import VectorAssembler,BucketedRandomProjectionLSH,VectorSlicer
 from pyspark.sql.window import Window
 from pyspark.ml.linalg import Vectors,VectorUDT
-from pyspark.sql.functions import array, create_map, struct
-from pyspark.ml.feature import ChiSqSelector
-from pyspark.ml.feature import StringIndexer, VectorAssembler
-from pyspark.ml import Pipeline
-from pyspark.ml.feature import StandardScaler
-from pyspark.ml.feature import VectorAssembler
-from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
-
+from pyspark.sql.types import ArrayType, DoubleType
+from pyspark.ml.feature import StandardScaler, ChiSqSelector, StringIndexer, VectorAssembler, BucketedRandomProjectionLSH, VectorSlicer
+from pyspark.sql.functions import rand,col,when,concat,substring,lit,udf,lower,sum as ps_sum,count as ps_count,row_number, array, create_map, struct
 
 ############################## random down sampling ##########################
 
@@ -171,3 +163,27 @@ def smote(vectorized_sdf,smote_config):
     oversampled_df = dfunion.union(vectorized_sdf.select(dfunion.columns))
     
     return oversampled_df
+
+############################## udf to restore original format from vectorized num cols ##########################
+def to_array(col):
+    def to_array_(v):
+        return v.toArray().tolist()
+    return udf(to_array_, ArrayType(DoubleType())).asNondeterministic()(col)
+
+def restore_smoted_df(num_cols,sdf,vectorized_col):
+    '''
+    restore smoted df to original type
+    with original num_cols names
+    and stringIndexed cat cols, suffix _index
+    depending on to_array udf to unpack vectorized col
+    * vectorized_col: str, col that is vectorized
+    '''
+    # based on the assumption that vectorization is by the list sequence of num_cols
+    # to array first
+    sdf = sdf.withColumn("array_num_cols", to_array(col(vectorized_col)))
+    # restore all num_cols
+    for i in range(len(num_cols)):
+        sdf = sdf.withColumn(num_cols[i], col("array_num_cols")[i])
+
+    drop_cols = [vectorized_col,'array_num_cols']
+    return sdf.drop(*drop_cols)
