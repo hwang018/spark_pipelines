@@ -6,9 +6,17 @@ from pyspark.sql import Row
 from pyspark.sql.functions import rand,col,when,concat,substring,lit,udf,lower,sum as ps_sum,count as ps_count,row_number
 from pyspark.sql.window import *
 from pyspark.sql import DataFrame
-from pyspark.ml.feature import VectorAssembler,BucketedRandomProjectionLSH
-from pyspark.ml.linalg import Vectors
+from pyspark.ml.feature import VectorAssembler,BucketedRandomProjectionLSH,VectorSlicer
 from pyspark.sql.window import Window
+from pyspark.ml.linalg import Vectors,VectorUDT
+from pyspark.sql.functions import array, create_map, struct
+from pyspark.ml.feature import ChiSqSelector
+from pyspark.ml.feature import StringIndexer, VectorAssembler
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import StandardScaler
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
+
 
 ############################## random down sampling ##########################
 
