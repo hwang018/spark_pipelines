@@ -55,6 +55,7 @@ def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_c
     
 ############################## spark smote oversampling ##########################
 #for categorical columns, must take its stringIndexed form (smote should be after string indexing, default by frequency)
+
 def pre_smote_df_process(df,num_cols,cat_cols,target_col,require_indexing = True, index_suffix="_index"):
     '''
     string indexer (optional) and vector assembler
@@ -98,7 +99,9 @@ def pre_smote_df_process(df,num_cols,cat_cols,target_col,require_indexing = True
     
     vectorized = pos_vectorized.select(*keep_cols).withColumn('label',pos_vectorized[target_col]).drop(target_col)
     
-    return vectorized
+    print("return num cols vectorized df and stages for testset transformation")
+    
+    return vectorized, stages_
 
 
 
