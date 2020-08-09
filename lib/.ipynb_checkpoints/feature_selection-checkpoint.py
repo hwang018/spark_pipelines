@@ -5,12 +5,13 @@ import pandas as pd
 import random
 import gc
 from pyspark.sql.functions import *
+from pyspark.ml.classification import RandomForestClassifier
 
 '''
 contains 5 types of feature removal
 1.hard-coded feature remover
 2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
-3.using model to select features, lgbm or lasso feature selection
+3.using model to select features, by buiding a stock version of rf
 '''
 
 ####################### type 1: hard-coded feature remover #################
@@ -159,7 +160,40 @@ def num_cols_correlation_test(sdf,num_cols,corr_thres,must_keep_cols=[]):
     
 ####################### type 5: model based feature selection #################
 
-'''
-by building a gradient boosting maching model
-and retain top features by importance
-'''
+def RF_feature_selector(rf_settings,trainDF_transformed,keep_K = None):
+    '''
+    feature selector based on random forest model
+    inputs:
+    * rf_settings: dict, contains params for rf, maxBins: max cardinality in df, keys are maxBins,labelCol,featuresCol
+    * trainDF_transformed: spark df, being label encoded for cat cols (such that metadata has nominal key)
+    * keep_K: int, number of top features to return
+    output:
+    * list of str, top K features names in the input df  
+    '''
+    rf = RandomForestClassifier(maxBins=rf_settings['maxBins'], labelCol=rf_settings['labelCol'], featuresCol=rf_settings['featuresCol'])
+    # train rf
+    print("building random forest feature selector using maxBins:%s"%rf_settings['maxBins'])
+    rfModel = rf.fit(trainDF_transformed)
+    
+    # for this rf, only label encoding is applied to cat cols, so we only have numeric and nominal columns
+    feature_list = pd.DataFrame(trainDF_transformed.schema["features"].metadata["ml_attr"]["attrs"]["numeric"]+
+                            trainDF_transformed.schema["features"].metadata["ml_attr"]["attrs"]["nominal"]).sort_values("idx")
+
+    feature_dict = dict(zip(feature_list["idx"],feature_list["name"])) 
+    
+    rf_importances = list(np.array(rfModel.featureImportances))
+
+    res = []
+    
+    for i,importance in enumerate(rf_importances):
+        feature_nm = feature_dict[i]
+        res.append([feature_nm,importance])
+
+    sorted_important_fs = sorted(res, key=lambda x: x[1], reverse =True)
+    
+    if keep_K:
+        print("return top %s features from rf feature importance"%keep_K)
+        return [a[0] for a in sorted_important_fs[:keep_K]]
+    else:
+        print("K not provided, return full list of sorted features, most important first")
+        return [a[0] for a in sorted_important_fs]

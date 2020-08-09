@@ -119,7 +119,6 @@ def one_hot_encode_cat_cols(sdf,cat_cols,cat_encode_suffix):
     return stages
 
 
-
 def assemble_into_features(sdf,num_cols,cat_cols,cat_index_suffix,cat_encode_suffix):
     '''
     assemble all features into vector
@@ -161,4 +160,27 @@ def assemble_into_features(sdf,num_cols,cat_cols,cat_index_suffix,cat_encode_suf
     #scaler = MinMaxScaler(min=0, max=1, inputCol='features', outputCol='features_minmax')
 
     #stages += [scaler] 
+    return stages_
+
+
+def assemble_into_features_RF(sdf,num_cols,cat_cols,cat_index_suffix):
+    '''
+    assemble all features into vector
+    without encoding, just label indexed
+    input:
+    * processed cat cols affix
+    '''
+    stages_ = []
+    # perform str indexing
+    str_ind_stages = str_index_cat_cols(sdf,cat_cols,cat_index_suffix)
+    stages_ += str_ind_stages
+    # save new names for indexed cat cols
+    indexed_catcols = [a+cat_index_suffix for a in cat_cols]
+    
+    assemblerInputs = num_cols+indexed_catcols
+    
+    #VectorAssembler only applied to numerical or transformed categorical columns
+    assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
+    stages_ += [assembler]
+
     return stages_
