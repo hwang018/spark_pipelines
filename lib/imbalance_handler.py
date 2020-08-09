@@ -103,8 +103,6 @@ def pre_smote_df_process(df,num_cols,cat_cols,target_col,require_indexing = True
     
     return vectorized, stages_
 
-
-
 def smote(vectorized_sdf,smote_config):
     '''
     contains logic to perform smote oversampling, given a spark df with 2 classes

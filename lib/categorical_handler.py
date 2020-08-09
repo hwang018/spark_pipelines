@@ -119,7 +119,7 @@ def one_hot_encode_cat_cols(sdf,cat_cols,cat_encode_suffix):
     return stages
 
 
-def assemble_into_features(sdf,num_cols,cat_cols,cat_index_suffix,cat_encode_suffix):
+def assemble_into_features_OHE(sdf,num_cols,cat_cols,cat_index_suffix,cat_encode_suffix):
     '''
     assemble all features into vector
     cat_cols with suffix
@@ -161,7 +161,6 @@ def assemble_into_features(sdf,num_cols,cat_cols,cat_index_suffix,cat_encode_suf
 
     #stages += [scaler] 
     return stages_
-
 
 def assemble_into_features_RF(sdf,num_cols,cat_cols,cat_index_suffix):
     '''

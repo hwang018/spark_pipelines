@@ -6,6 +6,10 @@ import random
 import gc
 from pyspark.sql.functions import *
 from pyspark.ml.classification import RandomForestClassifier
+import lib.categorical_handler as ctgy
+from pyspark.ml import Pipeline
+
+
 
 '''
 contains 5 types of feature removal
@@ -160,19 +164,30 @@ def num_cols_correlation_test(sdf,num_cols,corr_thres,must_keep_cols=[]):
     
 ####################### type 5: model based feature selection #################
 
-def RF_feature_selector(rf_settings,trainDF_transformed,keep_K = None):
+def RF_feature_selector(rf_settings,sdf,num_cols,cat_cols,keep_K = None):
     '''
     feature selector based on random forest model
     inputs:
-    * rf_settings: dict, contains params for rf, maxBins: max cardinality in df, keys are maxBins,labelCol,featuresCol
-    * trainDF_transformed: spark df, being label encoded for cat cols (such that metadata has nominal key)
-    * keep_K: int, number of top features to return
+        * rf_settings: dict, contains params for rf, maxBins: max cardinality in df, keys are maxBins,labelCol,featuresCol
+        * trainDF_transformed: spark df, being label encoded for cat cols (such that metadata has nominal key)
+        * keep_K: int, number of top features to return
     output:
-    * list of str, top K features names in the input df  
+        * list of str, top K features names in the input df  
     '''
+    # using RF to select top features, we only need to label encode cat cols (not apply OHE)
+    print("preparing stages to prepare for rf input vectorized df")
+    
+    stages_rf = ctgy.assemble_into_features_RF(sdf,num_cols,cat_cols,'_index')
+    partialPipeline = Pipeline().setStages(stages_rf)
+    
+    print("transforming df (label encoding and vectorizing)")
+    pipelineModel = partialPipeline.fit(sdf)
+    
+    # get the label encoded, vectorized train dataset
+    trainDF_transformed = pipelineModel.transform(sdf)
+    
     rf = RandomForestClassifier(maxBins=rf_settings['maxBins'], labelCol=rf_settings['labelCol'], featuresCol=rf_settings['featuresCol'])
-    # train rf
-    print("building random forest feature selector using maxBins:%s"%rf_settings['maxBins'])
+    print("fitting random forest model using maxBins:%s"%rf_settings['maxBins'])
     rfModel = rf.fit(trainDF_transformed)
     
     # for this rf, only label encoding is applied to cat cols, so we only have numeric and nominal columns
