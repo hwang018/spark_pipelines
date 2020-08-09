@@ -55,10 +55,9 @@ def spark_df_down_sampling(sdf, desired_major_to_minor_ratio, label_col, major_c
     
 ############################## spark smote oversampling ##########################
 #for categorical columns, must take its stringIndexed form (smote should be after string indexing, default by frequency)
-
-def pre_smote_df_process(df,num_cols,cat_cols,target_col,index_suffix="_index"):
+def pre_smote_df_process(df,num_cols,cat_cols,target_col,require_indexing = True, index_suffix="_index"):
     '''
-    string indexer and vector assembler
+    string indexer (optional) and vector assembler
     inputs:
     * df: spark df, original
     * num_cols: numerical cols to be assembled
@@ -73,24 +72,35 @@ def pre_smote_df_process(df,num_cols,cat_cols,target_col,index_suffix="_index"):
         
     if target_col in num_cols:
         num_cols.remove(target_col)
-
+    
     # only assembled numeric columns into features
     assembler = VectorAssembler(inputCols = num_cols, outputCol = 'features')
-    # index the string cols, except possibly for the label col
-    assemble_stages = [StringIndexer(inputCol=column, outputCol=column+index_suffix).fit(df) for column in list(set(cat_cols)-set([target_col]))]
-    # add the stage of numerical vector assembler
-    assemble_stages.append(assembler)
-    pipeline = Pipeline(stages=assemble_stages)
-    pos_vectorized = pipeline.fit(df).transform(df)
     
-    # drop original num cols and cat cols
-    drop_cols = num_cols+cat_cols
+    stages_ = []
+    stages_.append(assembler)
+
+    # setting to drop original num cols and cat cols
+    drop_cols = num_cols
+    
+    # index the string cols, except possibly for the label col
+    if require_indexing == True:
+        str_ind_stages = [StringIndexer(inputCol=column, outputCol=column+index_suffix).fit(df) for column in list(set(cat_cols)-set([target_col]))]
+        stages_ += str_ind_stages
+        # also drop cat cols if str index applied
+        drop_cols += (cat_cols)
+        
+    # add the stage of numerical vector assembler
+    pipeline = Pipeline(stages=stages_)
+    
+    pos_vectorized = pipeline.fit(df).transform(df)
     
     keep_cols = [a for a in pos_vectorized.columns if a not in drop_cols]
     
     vectorized = pos_vectorized.select(*keep_cols).withColumn('label',pos_vectorized[target_col]).drop(target_col)
     
     return vectorized
+
+
 
 def smote(vectorized_sdf,smote_config):
     '''
