@@ -1,3 +1,9 @@
+'''
+contains 5 types of feature removal
+1.hard-coded feature remover
+2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
+3.using model to select features, by buiding a stock version of rf
+'''
 import pyspark.mllib.stat as st
 import pyspark.mllib.linalg as ln
 import numpy as np
@@ -8,13 +14,6 @@ from pyspark.sql.functions import *
 from pyspark.ml.classification import RandomForestClassifier
 import lib.categorical_handler as ctgy
 from pyspark.ml import Pipeline
-
-'''
-contains 5 types of feature removal
-1.hard-coded feature remover
-2.remove features that's not to the standard (e.g. too few/much info), no variation... too much missing values...
-3.using model to select features, by buiding a stock version of rf
-'''
 
 ####################### type 1: hard-coded feature remover #################
 

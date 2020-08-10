@@ -1,12 +1,17 @@
-##################################### RF, with tuning process ################################
-
-from pyspark.ml.classification import RandomForestClassifier
+'''
+contains 2 types of tree based classification model from spark ml
+1.Random Forest
+2.Gradient Boosted Trees
+Both comes with param tuning using grid search
+'''
+from pyspark.ml.classification import GBTClassifier,RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 import lib.categorical_handler as ctgy
 from pyspark.ml import Pipeline
 
+##################################### RF, with tuning process ################################
 
 def train_rf_param_tuning(params,train_df,test_df,num_cols,cat_cols,cv_Folds = 5):
     # label encoding on cat cols, assemble, creating col feature
@@ -58,11 +63,12 @@ def train_rf_param_tuning(params,train_df,test_df,num_cols,cat_cols,cv_Folds = 5
 def train_gbt_param_tuning(params,train_df,test_df,num_cols,cat_cols,cv_Folds = 5):
     # label encoding on cat cols, assemble, creating col feature
     gbt_tune_grid = params['GBT']
-    print("received gbt param grid: %s"%rf_tune_grid)
+    print("received gbt param grid: %s"%gbt_tune_grid)
     
-    stages_rf = ctgy.assemble_into_features_RF(train_df,num_cols,cat_cols,'_index')
+    # using the same encoding and assembler stages as rf
+    stages_gbt = ctgy.assemble_into_features_RF(train_df,num_cols,cat_cols,'_index')
 
-    partialPipeline = Pipeline().setStages(stages_rf) # rf stages involves only label encoding
+    partialPipeline = Pipeline().setStages(stages_gbt) # gbt stages involves only label encoding
     
     pipelineModel = partialPipeline.fit(train_df)
 
@@ -75,12 +81,9 @@ def train_gbt_param_tuning(params,train_df,test_df,num_cols,cat_cols,cv_Folds = 
     # Create an initial RandomForest model.
     gbt = GBTClassifier(labelCol="label", featuresCol="features", maxIter=10)
 
-    
     paramGrid = (ParamGridBuilder()
                  .addGrid(gbt.maxDepth, gbt_tune_grid['maxDepth'])
                  .addGrid(gbt.maxBins, gbt_tune_grid['maxBins'])
-                 .addGrid(gbt.numTrees, gbt_tune_grid['numTrees'])
-                 .addGrid(gbt.learningRate, gbt_tune_grid['learningRate'])
                  .build())
 
     # Evaluate model
@@ -89,7 +92,7 @@ def train_gbt_param_tuning(params,train_df,test_df,num_cols,cat_cols,cv_Folds = 
     cv = CrossValidator(estimator=gbt, estimatorParamMaps=paramGrid, evaluator=evaluator, numFolds=cv_Folds)
     
     print("fitting cv gbt models")
-    cvModel = cv.fit(train_df)
+    cvModel = cv.fit(train_df_transformed)
     bestModel = cvModel.bestModel
 
     test_predictions = bestModel.transform(test_df_transformed)
