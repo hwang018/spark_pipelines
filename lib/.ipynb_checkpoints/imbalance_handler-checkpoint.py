@@ -9,6 +9,7 @@ from pyspark.ml.linalg import Vectors,VectorUDT
 from pyspark.sql.types import ArrayType, DoubleType
 from pyspark.ml.feature import StandardScaler, ChiSqSelector, StringIndexer, VectorAssembler, BucketedRandomProjectionLSH, VectorSlicer
 from pyspark.sql.functions import rand,col,when,concat,substring,lit,udf,lower,sum as ps_sum,count as ps_count,row_number, array, create_map, struct
+from pyspark.ml import Pipeline
 
 ############################## random down sampling ##########################
 
@@ -181,7 +182,7 @@ def to_array(col):
         return v.toArray().tolist()
     return udf(to_array_, ArrayType(DoubleType())).asNondeterministic()(col)
 
-def restore_smoted_df(num_cols,sdf,vectorized_col):
+def restore_smoted_df(num_cols,smoted_df,vectorized_col):
     '''
     restore smoted df to original type
     with original num_cols names
@@ -191,10 +192,10 @@ def restore_smoted_df(num_cols,sdf,vectorized_col):
     '''
     # based on the assumption that vectorization is by the list sequence of num_cols
     # to array first
-    sdf = sdf.withColumn("array_num_cols", to_array(col(vectorized_col)))
+    smoted_df = smoted_df.withColumn("array_num_cols", to_array(col(vectorized_col)))
     # restore all num_cols
     for i in range(len(num_cols)):
-        sdf = sdf.withColumn(num_cols[i], col("array_num_cols")[i])
+        smoted_df = smoted_df.withColumn(num_cols[i], col("array_num_cols")[i])
 
     drop_cols = [vectorized_col,'array_num_cols']
-    return sdf.drop(*drop_cols)
+    return smoted_df.drop(*drop_cols)

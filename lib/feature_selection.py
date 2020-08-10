@@ -9,8 +9,6 @@ from pyspark.ml.classification import RandomForestClassifier
 import lib.categorical_handler as ctgy
 from pyspark.ml import Pipeline
 
-
-
 '''
 contains 5 types of feature removal
 1.hard-coded feature remover
